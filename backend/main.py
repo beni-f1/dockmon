@@ -470,11 +470,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Register v2 authentication router
 from auth.v2_routes import router as auth_v2_router
 from api.v2.user import router as user_v2_router
+from api.v2.users import router as users_v2_router  # User management (admin)
 # NOTE: alerts_router is registered AFTER v2 rules routes are defined below (around line 1060)
 # This is to ensure v2 /api/alerts/rules routes take precedence over the /api/alerts/ router
 
 app.include_router(auth_v2_router)  # v2 cookie-based auth
 app.include_router(user_v2_router)  # v2 user preferences
+app.include_router(users_v2_router)  # v2 user management (admin only)
 app.include_router(deployment_routes.router)  # v2.2.7+ deployment endpoints
 app.include_router(stack_routes.router)  # v2.2.7+ stacks endpoints
 # app.include_router(alerts_router)  # MOVED: Registered after v2 rules routes

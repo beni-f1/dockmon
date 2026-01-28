@@ -18,10 +18,19 @@ import { authApi } from './api'
 import type { LoginRequest } from '@/types/api'
 
 interface AuthContextValue {
-  user: { id: number; username: string; display_name?: string | null; is_first_login?: boolean } | null
+  user: { 
+    id: number
+    username: string
+    display_name?: string | null
+    role: 'admin' | 'user' | 'readonly'
+    scopes: string[]
+    is_first_login?: boolean 
+  } | null
   isLoading: boolean
   isAuthenticated: boolean
   isFirstLogin: boolean
+  isAdmin: boolean
+  canWrite: boolean
   login: (credentials: LoginRequest) => Promise<void>
   logout: () => Promise<void>
 }
@@ -66,6 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || loginMutation.isPending || logoutMutation.isPending,
     isAuthenticated: !isError && data?.user != null,
     isFirstLogin: data?.user?.is_first_login ?? false,
+    isAdmin: data?.user?.role === 'admin' || data?.user?.scopes?.includes('admin') || false,
+    canWrite: data?.user?.role === 'admin' || data?.user?.role === 'user' || 
+              data?.user?.scopes?.includes('admin') || data?.user?.scopes?.includes('write') || false,
     login: async (credentials) => {
       await loginMutation.mutateAsync(credentials)
     },

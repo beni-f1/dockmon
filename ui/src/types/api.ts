@@ -16,6 +16,8 @@ export interface LoginResponse {
   user: {
     id: number
     username: string
+    display_name?: string | null
+    role: 'admin' | 'user' | 'readonly'
     is_first_login: boolean
   }
   message: string
@@ -26,6 +28,8 @@ export interface CurrentUserResponse {
     id: number
     username: string
     display_name?: string | null
+    role: 'admin' | 'user' | 'readonly'
+    scopes: string[]
     is_first_login?: boolean
   }
 }
@@ -201,4 +205,54 @@ export interface RegistryCredentialCreate {
 export interface RegistryCredentialUpdate {
   username?: string
   password?: string
+}
+
+// ==================== User Management ====================
+
+export type UserRole = 'admin' | 'user' | 'readonly'
+
+export interface User {
+  id: number
+  username: string
+  display_name?: string | null
+  role: UserRole
+  is_first_login: boolean
+  must_change_password: boolean
+  created_at: string
+  updated_at: string
+  last_login?: string | null
+}
+
+export interface UserCreate {
+  username: string
+  password?: string  // Optional - generates random if not provided
+  display_name?: string
+  role: UserRole
+}
+
+export interface UserUpdate {
+  display_name?: string | null
+  role?: UserRole
+  must_change_password?: boolean
+}
+
+export interface UserListResponse {
+  users: User[]
+  total: number
+}
+
+export interface PasswordResetResponse {
+  temporary_password: string
+  message: string
+}
+
+export interface RoleInfo {
+  id: UserRole
+  name: string
+  description: string
+  scopes: string[]
+}
+
+export interface AvailableRolesResponse {
+  roles: RoleInfo[]
 }

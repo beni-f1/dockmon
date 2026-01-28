@@ -161,6 +161,8 @@ async def login_v2(
             user={
                 "id": user.id,
                 "username": user.username,
+                "display_name": user.display_name,
+                "role": user.role,
                 "is_first_login": user.is_first_login
             },
             message="Login successful"
@@ -287,7 +289,7 @@ async def get_current_user_v2(
 
     Requires valid session cookie.
     """
-    # Get user from database to include is_first_login status
+    # Get user from database to include is_first_login status and role
 
     with db.get_session() as session:
         user = session.query(User).filter(User.id == current_user["user_id"]).first()
@@ -297,6 +299,8 @@ async def get_current_user_v2(
                 "id": current_user["user_id"],
                 "username": current_user["username"],
                 "display_name": user.display_name if user and hasattr(user, 'display_name') else None,
+                "role": user.role if user else "readonly",
+                "scopes": current_user.get("scopes", ["read"]),
                 "is_first_login": user.is_first_login if user else False
             }
         }
