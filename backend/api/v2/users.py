@@ -25,7 +25,6 @@ from auth.api_key_auth import get_current_user_or_api_key as get_current_user, r
 from auth.shared import db
 from database import User, UserPrefs
 from security.audit import security_audit
-from event_logger import get_event_logger, EventCategory, EventSeverity
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2/users", tags=["users"])

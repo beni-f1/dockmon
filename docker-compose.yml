@@ -1,12 +1,13 @@
 services:
   dockmon:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-      # Optional: Set BASE_PATH for reverse proxy subpath deployment (uncomment and edit if needed)
-      # Example: For accessing DockMon at https://domain.com/dockmon/
-      # args:
-      #   - BASE_PATH=/dockmon/
+    image: ghcr.io/beni-f1/dockmon:1b4923f
+    # To build locally instead, comment out 'image' above and uncomment below:
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile
+    #   # Optional: Set BASE_PATH for reverse proxy subpath deployment
+    #   # args:
+    #   #   - BASE_PATH=/dockmon/
     container_name: dockmon
     restart: unless-stopped
     security_opt:
