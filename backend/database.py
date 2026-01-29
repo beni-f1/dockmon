@@ -45,6 +45,14 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     display_name = Column(String, nullable=True)  # Optional friendly display name
     role = Column(Text, nullable=False, default="admin")  # "admin", "user", "readonly" - for future RBAC
+    
+    # Container visibility filtering (v2.2.8-2+)
+    # If visible_tags is set, user only sees containers with at least one of these tags
+    # If hidden_tags is set, containers with any of these tags are hidden
+    # hidden_tags takes precedence over visible_tags
+    visible_tags = Column(Text, nullable=True)  # JSON array of tag strings (whitelist)
+    hidden_tags = Column(Text, nullable=True)   # JSON array of tag strings (blacklist)
+    
     is_first_login = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
     dashboard_layout_v2 = Column(Text, nullable=True)  # JSON string of react-grid-layout (v2)

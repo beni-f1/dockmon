@@ -142,9 +142,9 @@ export function UsersPage() {
               <TableHead>Username</TableHead>
               <TableHead>Display Name</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Visibility</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Login</TableHead>
-              <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -165,6 +165,8 @@ export function UsersPage() {
               data?.users.map((user: User) => {
                 const roleConfig = ROLE_CONFIG[user.role]
                 const isCurrentUser = user.id === currentUser?.id
+                const hasVisibilityFilters = (user.visible_tags && user.visible_tags.length > 0) || 
+                                            (user.hidden_tags && user.hidden_tags.length > 0)
                 
                 return (
                   <TableRow key={user.id}>
@@ -182,6 +184,24 @@ export function UsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {hasVisibilityFilters ? (
+                        <div className="flex flex-col gap-1">
+                          {user.visible_tags && user.visible_tags.length > 0 && (
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                              Show: {user.visible_tags.length} tag{user.visible_tags.length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {user.hidden_tags && user.hidden_tags.length > 0 && (
+                            <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                              Hide: {user.hidden_tags.length} tag{user.hidden_tags.length > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">All containers</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {user.must_change_password ? (
                         <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                           Password Change Required
@@ -194,9 +214,6 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {formatDate(user.last_login)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(user.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

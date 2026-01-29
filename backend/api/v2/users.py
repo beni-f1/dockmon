@@ -14,6 +14,7 @@ SECURITY:
 - Audit logging for all user management actions
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional, List
@@ -33,6 +34,24 @@ router = APIRouter(prefix="/api/v2/users", tags=["users"])
 VALID_ROLES = ["admin", "user", "readonly"]
 
 
+def parse_tags(tags_json: Optional[str]) -> Optional[List[str]]:
+    """Parse JSON string of tags to list"""
+    if not tags_json:
+        return None
+    try:
+        tags = json.loads(tags_json)
+        return tags if isinstance(tags, list) else None
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def serialize_tags(tags: Optional[List[str]]) -> Optional[str]:
+    """Serialize tags list to JSON string"""
+    if not tags:
+        return None
+    return json.dumps(tags)
+
+
 # ==================== Request/Response Models ====================
 
 class UserCreate(BaseModel):
@@ -41,6 +60,8 @@ class UserCreate(BaseModel):
     password: Optional[str] = Field(None, min_length=8, max_length=100)
     display_name: Optional[str] = Field(None, max_length=100)
     role: str = Field(default="user", pattern=r"^(admin|user|readonly)$")
+    visible_tags: Optional[List[str]] = Field(None, description="Whitelist: only show containers with these tags")
+    hidden_tags: Optional[List[str]] = Field(None, description="Blacklist: hide containers with these tags")
     
     @field_validator('role')
     @classmethod
@@ -55,6 +76,8 @@ class UserUpdate(BaseModel):
     display_name: Optional[str] = Field(None, max_length=100)
     role: Optional[str] = Field(None, pattern=r"^(admin|user|readonly)$")
     must_change_password: Optional[bool] = None
+    visible_tags: Optional[List[str]] = Field(None, description="Whitelist: only show containers with these tags")
+    hidden_tags: Optional[List[str]] = Field(None, description="Blacklist: hide containers with these tags")
     
     @field_validator('role')
     @classmethod
@@ -70,6 +93,8 @@ class UserResponse(BaseModel):
     username: str
     display_name: Optional[str] = None
     role: str
+    visible_tags: Optional[List[str]] = None
+    hidden_tags: Optional[List[str]] = None
     is_first_login: bool
     must_change_password: bool
     created_at: datetime
@@ -109,6 +134,8 @@ async def list_users(
                 username=u.username,
                 display_name=u.display_name,
                 role=u.role,
+                visible_tags=parse_tags(u.visible_tags),
+                hidden_tags=parse_tags(u.hidden_tags),
                 is_first_login=u.is_first_login,
                 must_change_password=u.must_change_password,
                 created_at=u.created_at.replace(tzinfo=timezone.utc) if u.created_at else datetime.now(timezone.utc),
@@ -142,6 +169,8 @@ async def get_user(
             username=user.username,
             display_name=user.display_name,
             role=user.role,
+            visible_tags=parse_tags(user.visible_tags),
+            hidden_tags=parse_tags(user.hidden_tags),
             is_first_login=user.is_first_login,
             must_change_password=user.must_change_password,
             created_at=user.created_at.replace(tzinfo=timezone.utc) if user.created_at else datetime.now(timezone.utc),
@@ -187,6 +216,8 @@ async def create_user(
             password_hash=password_hash,
             display_name=user_data.display_name,
             role=user_data.role,
+            visible_tags=serialize_tags(user_data.visible_tags),
+            hidden_tags=serialize_tags(user_data.hidden_tags),
             is_first_login=True,
             must_change_password=must_change,
             created_at=datetime.now(timezone.utc),
@@ -225,6 +256,8 @@ async def create_user(
             username=new_user.username,
             display_name=new_user.display_name,
             role=new_user.role,
+            visible_tags=parse_tags(new_user.visible_tags),
+            hidden_tags=parse_tags(new_user.hidden_tags),
             is_first_login=new_user.is_first_login,
             must_change_password=new_user.must_change_password,
             created_at=new_user.created_at,
@@ -268,6 +301,11 @@ async def update_user(
             user.role = user_data.role
         if user_data.must_change_password is not None:
             user.must_change_password = user_data.must_change_password
+        if user_data.visible_tags is not None:
+            # Empty list clears the filter, None keeps existing value
+            user.visible_tags = serialize_tags(user_data.visible_tags) if user_data.visible_tags else None
+        if user_data.hidden_tags is not None:
+            user.hidden_tags = serialize_tags(user_data.hidden_tags) if user_data.hidden_tags else None
         
         user.updated_at = datetime.now(timezone.utc)
         session.commit()
@@ -292,6 +330,8 @@ async def update_user(
             username=user.username,
             display_name=user.display_name,
             role=user.role,
+            visible_tags=parse_tags(user.visible_tags),
+            hidden_tags=parse_tags(user.hidden_tags),
             is_first_login=user.is_first_login,
             must_change_password=user.must_change_password,
             created_at=user.created_at.replace(tzinfo=timezone.utc) if user.created_at else datetime.now(timezone.utc),

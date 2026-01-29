@@ -41,15 +41,31 @@ const createUserSchema = z.object({
     .or(z.literal('')),
   display_name: z.string().max(100).optional().or(z.literal('')),
   role: z.enum(['admin', 'user', 'readonly']),
+  visible_tags: z.string().optional().or(z.literal('')),  // Comma-separated tags
+  hidden_tags: z.string().optional().or(z.literal('')),   // Comma-separated tags
 })
 
 const editUserSchema = z.object({
   display_name: z.string().max(100).optional().or(z.literal('')),
   role: z.enum(['admin', 'user', 'readonly']),
+  visible_tags: z.string().optional().or(z.literal('')),
+  hidden_tags: z.string().optional().or(z.literal('')),
 })
 
 type CreateFormData = z.infer<typeof createUserSchema>
 type EditFormData = z.infer<typeof editUserSchema>
+
+// Helper to convert comma-separated string to array
+function tagsToArray(tags: string | undefined): string[] | undefined {
+  if (!tags || tags.trim() === '') return undefined
+  return tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
+}
+
+// Helper to convert array to comma-separated string
+function arrayToTags(arr: string[] | null | undefined): string {
+  if (!arr || arr.length === 0) return ''
+  return arr.join(', ')
+}
 
 interface UserModalProps {
   open: boolean
@@ -86,6 +102,8 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
       password: '',
       display_name: '',
       role: 'user',
+      visible_tags: '',
+      hidden_tags: '',
     },
   })
 
@@ -94,6 +112,8 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
     defaultValues: {
       display_name: '',
       role: 'user',
+      visible_tags: '',
+      hidden_tags: '',
     },
   })
 
@@ -104,6 +124,8 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
         editForm.reset({
           display_name: user.display_name || '',
           role: user.role,
+          visible_tags: arrayToTags(user.visible_tags),
+          hidden_tags: arrayToTags(user.hidden_tags),
         })
       } else {
         createForm.reset({
@@ -111,6 +133,8 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
           password: '',
           display_name: '',
           role: 'user',
+          visible_tags: '',
+          hidden_tags: '',
         })
       }
     }
@@ -127,6 +151,14 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
       }
       if (data.display_name) {
         payload.display_name = data.display_name
+      }
+      const visibleTags = tagsToArray(data.visible_tags)
+      const hiddenTags = tagsToArray(data.hidden_tags)
+      if (visibleTags) {
+        payload.visible_tags = visibleTags
+      }
+      if (hiddenTags) {
+        payload.hidden_tags = hiddenTags
       }
       return usersApi.create(payload)
     },
@@ -149,6 +181,8 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
     mutationFn: (data: EditFormData) => usersApi.update(user!.id, {
       display_name: data.display_name || null,
       role: data.role,
+      visible_tags: tagsToArray(data.visible_tags) || [],
+      hidden_tags: tagsToArray(data.hidden_tags) || [],
     }),
     onSuccess: () => {
       toast.success('User updated successfully')
@@ -254,6 +288,43 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Container Visibility Filtering */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="text-sm font-medium">Container Visibility</div>
+            <p className="text-xs text-muted-foreground">
+              Control which containers this user can see based on container labels/tags.
+              Leave empty to show all containers.
+            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="visible_tags">
+                Visible Tags (whitelist)
+              </Label>
+              <Input
+                id="visible_tags"
+                placeholder="e.g., production, team-alpha"
+                {...(isEditing ? editForm.register('visible_tags') : createForm.register('visible_tags'))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated. If set, user only sees containers with at least one of these tags.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hidden_tags">
+                Hidden Tags (blacklist)
+              </Label>
+              <Input
+                id="hidden_tags"
+                placeholder="e.g., internal, secret"
+                {...(isEditing ? editForm.register('hidden_tags') : createForm.register('hidden_tags'))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated. Containers with any of these tags are hidden. Takes precedence over visible tags.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>

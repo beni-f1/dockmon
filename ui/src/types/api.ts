@@ -216,6 +216,8 @@ export interface User {
   username: string
   display_name?: string | null
   role: UserRole
+  visible_tags?: string[] | null  // Whitelist: only show containers with these tags
+  hidden_tags?: string[] | null   // Blacklist: hide containers with these tags
   is_first_login: boolean
   must_change_password: boolean
   created_at: string
@@ -228,12 +230,16 @@ export interface UserCreate {
   password?: string  // Optional - generates random if not provided
   display_name?: string
   role: UserRole
+  visible_tags?: string[]
+  hidden_tags?: string[]
 }
 
 export interface UserUpdate {
   display_name?: string | null
   role?: UserRole
   must_change_password?: boolean
+  visible_tags?: string[]
+  hidden_tags?: string[]
 }
 
 export interface UserListResponse {
