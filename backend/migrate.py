@@ -290,10 +290,12 @@ def _handle_fresh_install(engine, alembic_cfg) -> bool:
         head_revision = _get_head_revision(alembic_cfg)
 
         # Initialize GlobalSettings.app_version to match HEAD revision
-        # Parse version from revision ID (e.g., "002_v2_0_1" -> "2.0.1")
-        version_match = re.search(r'_v(\d+)_(\d+)_(\d+)', head_revision)
+        # Parse version from revision ID (e.g., "002_v2_0_1" -> "2.0.1", "034_v2_2_8_2" -> "2.2.8-2")
+        version_match = re.search(r'_v(\d+)_(\d+)_(\d+)(?:_(\d+))?', head_revision)
         if version_match:
             app_version = f"{version_match.group(1)}.{version_match.group(2)}.{version_match.group(3)}"
+            if version_match.group(4):  # Optional build suffix (e.g., -2)
+                app_version += f"-{version_match.group(4)}"
             logger.info(f"Initializing app_version to {app_version}")
 
             with Session(engine) as session:

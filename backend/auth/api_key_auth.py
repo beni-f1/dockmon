@@ -181,6 +181,21 @@ def validate_api_key(
         scopes = [s.strip() for s in api_key_record.scopes.split(',')]
 
         logger.info(f"API key validated: {api_key_record.name} (user: {user.username})")
+        
+        # Parse visibility tags for container filtering (v2.2.8-2+)
+        import json
+        visible_tags = None
+        hidden_tags = None
+        if user.visible_tags:
+            try:
+                visible_tags = json.loads(user.visible_tags)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if user.hidden_tags:
+            try:
+                hidden_tags = json.loads(user.hidden_tags)
+            except (json.JSONDecodeError, TypeError):
+                pass
 
         return {
             "user_id": user.id,
@@ -188,7 +203,9 @@ def validate_api_key(
             "api_key_id": api_key_record.id,
             "api_key_name": api_key_record.name,
             "scopes": scopes,
-            "auth_type": "api_key"
+            "auth_type": "api_key",
+            "visible_tags": visible_tags,
+            "hidden_tags": hidden_tags
         }
 
 
@@ -301,11 +318,28 @@ async def get_current_user_or_api_key(
                 user = session.query(User).filter(User.id == session_data["user_id"]).first()
                 if user:
                     user_scopes = _get_user_scopes(user.role)
+                    
+                    # Parse visibility tags for container filtering (v2.2.8-2+)
+                    import json
+                    visible_tags = None
+                    hidden_tags = None
+                    if user.visible_tags:
+                        try:
+                            visible_tags = json.loads(user.visible_tags)
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+                    if user.hidden_tags:
+                        try:
+                            hidden_tags = json.loads(user.hidden_tags)
+                        except (json.JSONDecodeError, TypeError):
+                            pass
 
                     return {
                         **session_data,
                         "auth_type": "session",
-                        "scopes": user_scopes
+                        "scopes": user_scopes,
+                        "visible_tags": visible_tags,
+                        "hidden_tags": hidden_tags
                     }
 
     # Priority 2: Try API key from Authorization header

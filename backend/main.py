@@ -1708,8 +1708,34 @@ async def prune_host_volumes(host_id: str, current_user: dict = Depends(get_curr
 
 @app.get("/api/containers", tags=["containers"])
 async def get_containers(host_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    """Get all containers"""
-    return await monitor.get_containers(host_id)
+    """Get all containers, filtered by user's visibility settings"""
+    containers = await monitor.get_containers(host_id)
+    
+    # Apply container visibility filtering based on user's tag settings (v2.2.8-2+)
+    visible_tags = current_user.get("visible_tags")
+    hidden_tags = current_user.get("hidden_tags")
+    
+    if visible_tags or hidden_tags:
+        filtered_containers = []
+        for container in containers:
+            container_tags = container.tags or []
+            
+            # Check hidden_tags first (blacklist takes precedence)
+            if hidden_tags:
+                if any(tag in container_tags for tag in hidden_tags):
+                    continue  # Skip this container - it has a hidden tag
+            
+            # Check visible_tags (whitelist)
+            if visible_tags:
+                # User only sees containers with at least one visible tag
+                if not any(tag in container_tags for tag in visible_tags):
+                    continue  # Skip - container doesn't have any visible tags
+            
+            filtered_containers.append(container)
+        
+        return filtered_containers
+    
+    return containers
 
 @app.post("/api/hosts/{host_id}/containers/{container_id}/restart", tags=["containers"], dependencies=[Depends(require_scope("write"))])
 async def restart_container(host_id: str, container_id: str, current_user: dict = Depends(get_current_user), rate_limit_check: bool = rate_limit_containers):
