@@ -1,6 +1,6 @@
 services:
   dockmon:
-    image: ghcr.io/beni-f1/dockmon:1b4923f
+    image: ghcr.io/beni-f1/dockmon:6c37b26
     # To build locally instead, comment out 'image' above and uncomment below:
     # build:
     #   context: .

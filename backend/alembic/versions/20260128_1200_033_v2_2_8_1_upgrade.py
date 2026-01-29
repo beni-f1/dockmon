@@ -1,10 +1,10 @@
-"""v2.2.9 upgrade - Multi-user role-based access control
+"""v2.2.8-1 upgrade - Multi-user role-based access control
 
-Revision ID: 033_v2_2_9
+Revision ID: 033_v2_2_8_1
 Revises: 032_v2_2_8
 Create Date: 2026-01-28
 
-CHANGES IN v2.2.9:
+CHANGES IN v2.2.8-1:
 - feat: Multi-user support with role-based access control (RBAC)
   - Three roles: admin, user, readonly
   - Admin: Full access - can manage users, hosts, containers, and all settings
@@ -24,7 +24,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '033_v2_2_9'
+revision = '033_v2_2_8_1'
 down_revision = '032_v2_2_8'
 branch_labels = None
 depends_on = None
@@ -65,7 +65,7 @@ def upgrade():
     if table_exists('global_settings'):
         op.execute(
             sa.text("UPDATE global_settings SET app_version = :version WHERE id = :id")
-            .bindparams(version='2.2.9', id=1)
+            .bindparams(version='2.2.8-1', id=1)
         )
 
 
